@@ -54,6 +54,7 @@ func main() {
 			log.Fatal("Error loading .env file")
 		}
 		slack_token := os.Getenv("SLACK_TOKEN")
+		slack_channel := os.Getenv("SLACK_CHANNEL_NAME")
 
 		var config Config
 		_, err = toml.DecodeFile(c.String("config"), &config)
@@ -62,15 +63,35 @@ func main() {
 		}
 
 		api := slack.New(slack_token)
+		team, err := api.GetTeamInfo()
+		if err != nil {
+			return err
+		}
+
 		ctypes, err := filterChannel(api, config)
 		if err != nil {
 			return err
 		}
 
+		params := slack.PostMessageParameters{}
+		_, _, err = api.PostMessage(slack_channel, "一時的に作成されたチャンネル一覧だよ〜", params)
+		if err != nil {
+			return err
+		}
 		for _, ctype := range ctypes {
-			fmt.Printf("%s\n", ctype.Name)
+			params := slack.PostMessageParameters{}
 			for _, channel := range ctype.Channels {
-				fmt.Printf("- %s\n", channel.Name)
+				attachment := slack.Attachment{
+					Title:     fmt.Sprintf("#%s", channel.Name),
+					TitleLink: fmt.Sprintf("slack://channel?team=%s&id=%s", team.ID, channel.ID),
+					Text:      channel.Topic.Value,
+					Color:     "#36a64f",
+				}
+				params.Attachments = append(params.Attachments, attachment)
+			}
+			_, _, err := api.PostMessage(slack_channel, ctype.Name, params)
+			if err != nil {
+				return err
 			}
 		}
 
