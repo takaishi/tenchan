@@ -1,0 +1,7 @@
+[[ctype]]
+name = "Category1"
+match = "foo"
+
+[[ctype]]
+name = "Category2"
+match = "bar"
