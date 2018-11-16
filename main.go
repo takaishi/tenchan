@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"github.com/joho/godotenv"
+	"github.com/nlopes/slack"
 	"github.com/urfave/cli"
 	"log"
 	"os"
@@ -15,6 +18,21 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
+		slack_token := os.Getenv("SLACK_TOKEN")
+
+		api := slack.New(slack_token)
+		channels, err := api.GetChannels(true)
+		if err != nil {
+			return err
+		}
+		for _, channel := range channels {
+			fmt.Printf("%s\n", channel.Name)
+		}
+
 		return nil
 	}
 
