@@ -12,7 +12,9 @@ import (
 )
 
 type Config struct {
-	CTypes []CType `toml:"ctype"`
+	Username  string  `toml:"username"`
+	IconEmoji string  `toml:"icon_emoji"`
+	CTypes    []CType `toml:"ctype"`
 }
 
 type CType struct {
@@ -73,13 +75,19 @@ func main() {
 			return err
 		}
 
-		params := slack.PostMessageParameters{}
+		params := slack.PostMessageParameters{
+			Username:  config.Username,
+			IconEmoji: config.IconEmoji,
+		}
 		_, _, err = api.PostMessage(slack_channel, "一時的に作成されたチャンネル一覧だよ〜", params)
 		if err != nil {
 			return err
 		}
 		for _, ctype := range ctypes {
-			params := slack.PostMessageParameters{}
+			params := slack.PostMessageParameters{
+				Username:  config.Username,
+				IconEmoji: config.IconEmoji,
+			}
 			for _, channel := range ctype.Channels {
 				attachment := slack.Attachment{
 					Title:     fmt.Sprintf("#%s", channel.Name),
