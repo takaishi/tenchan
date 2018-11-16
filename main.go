@@ -16,8 +16,28 @@ type Config struct {
 }
 
 type CType struct {
-	Name  string `toml:"name"`
-	Match string `toml:"match"`
+	Name     string `toml:"name"`
+	Match    string `toml:"match"`
+	Channels []slack.Channel
+}
+
+func filterChannel(api *slack.Client, config Config) ([]CType, error) {
+	channels, err := api.GetChannels(true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for i, ctype := range config.CTypes {
+		r := regexp.MustCompile(ctype.Match)
+		for _, channel := range channels {
+			if r.Match([]byte(channel.Name)) {
+				config.CTypes[i].Channels = append(config.CTypes[i].Channels, channel)
+			}
+		}
+	}
+
+	return config.CTypes, nil
 }
 
 func main() {
@@ -42,16 +62,15 @@ func main() {
 		}
 
 		api := slack.New(slack_token)
-		channels, err := api.GetChannels(true)
+		ctypes, err := filterChannel(api, config)
 		if err != nil {
 			return err
 		}
-		for _, ctype := range config.CTypes {
-			for _, channel := range channels {
-				r := regexp.MustCompile(ctype.Match)
-				if r.Match([]byte(channel.Name)) {
-					fmt.Printf("%s\n", channel.Name)
-				}
+
+		for _, ctype := range ctypes {
+			fmt.Printf("%s\n", ctype.Name)
+			for _, channel := range ctype.Channels {
+				fmt.Printf("- %s\n", channel.Name)
 			}
 		}
 
